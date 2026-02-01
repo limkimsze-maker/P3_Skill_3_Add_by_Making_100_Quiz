@@ -697,31 +697,46 @@
   });
 
   function updateSoundUI(){
-    els.soundBtn.textContent = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
-    els.unlockBtn.style.display = audioUnlocked ? "none" : "inline-flex";
-  }
-  function safePlay(a){
-    if(!soundOn || !audioUnlocked) return;
-    try{ a.currentTime = 0; a.play().catch(()=>{}); }catch{}
-  }
-
-  els.soundBtn.addEventListener("click", ()=>{
-    soundOn = !soundOn;
-    updateSoundUI();
-  });
-  els.unlockBtn.addEventListener("click", ()=>{
+      function unlockAudio(){
+    if(audioUnlocked) return;
     audioUnlocked = true;
+
+    // Prime audio silently (browser gesture unlock)
     try{
       [sndWrong, sndCorrect, sndClock].forEach(a=>{
         try{
           a.muted = true;
-          a.play().then(()=>{ a.pause(); a.currentTime = 0; a.muted=false; }).catch(()=>{ a.muted=false; });
+          const p = a.play();
+          if(p && typeof p.then === "function"){
+            p.then(()=>{
+              try{ a.pause(); a.currentTime = 0; }catch{}
+              a.muted = false;
+            }).catch(()=>{ a.muted = false; });
+          }else{
+            try{ a.pause(); a.currentTime = 0; }catch{}
+            a.muted = false;
+          }
         }catch{}
       });
     }catch{}
+
+    updateSoundUI();
+  }
+
+  // ✅ Auto-unlock on first interaction anywhere (no need to press the unlock button)
+  window.addEventListener("pointerdown", unlockAudio, { once:true, capture:true });
+  window.addEventListener("keydown", unlockAudio, { once:true, capture:true });
+  window.addEventListener("touchstart", unlockAudio, { once:true, capture:true, passive:true });
+
+  els.soundBtn.addEventListener("click", ()=>{
+    // clicking Sound toggle is a user gesture too → unlock immediately when turning ON
+    soundOn = !soundOn;
+    if(soundOn) unlockAudio();
     updateSoundUI();
   });
-  updateSoundUI();
+
+  // Keep button as fallback, but now it just calls the same unlock
+  els.unlockBtn.addEventListener("click", unlockAudio);
 
   /* --------- settings (defaults) --------- */
   const settings = {
@@ -1173,4 +1188,5 @@
 </script>
 </body>
 </html>
+
 
