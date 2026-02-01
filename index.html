@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- /quiz (Kim Sze) — Make 100 timed quiz | Designed by Lim Kim Sze © 2026 -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Make 100 — Timed Practice Quiz</title>
+
+  <!-- Favicon (Kim Sze standard) -->
+  <link rel="icon" href="./kimsze_sharp16.ico?v=20260111a" sizes="any">
+  <link rel="shortcut icon" href="./kimsze_sharp16.ico?v=20260111a">
+
+  <!-- ✅ Always-Clear on Load (Default Build Contract) -->
+  <script>
+  (function(){
+    const ACTIVITY_ID = "https://limkimsze-maker.github.io/Quiz_Make100/";
+    try{
+      const del = [];
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(!k) continue;
+        if(k === ACTIVITY_ID) del.push(k);
+        if(k.startsWith(ACTIVITY_ID+"::")) del.push(k);
+        if(k.startsWith("sls_scope::"+ACTIVITY_ID)) del.push(k);
+        if(k.startsWith("UFCO-firstSubmit::"+ACTIVITY_ID)) del.push(k);
+        if(k.startsWith("sls_unlike_payload::"+ACTIVITY_ID)) del.push(k);
+        if(k.startsWith("sls_unlike_payload::"+ACTIVITY_ID+"::")) del.push(k);
+        if(k.startsWith("sls_scope::"+ACTIVITY_ID+"::")) del.push(k);
+        if(k.startsWith("UFCO-firstSubmit::"+ACTIVITY_ID+"::")) del.push(k);
+      }
+      del.forEach(k=>{ try{ localStorage.removeItem(k); }catch{} });
+      try{ sessionStorage.clear(); }catch{}
+      try{
+        const bc = new BroadcastChannel("xapi-state");
+        bc.postMessage({type:"clear", activityId: ACTIVITY_ID, ts: Date.now()});
+        bc.close();
+      }catch{}
+    }catch{}
+  })();
+  </script>
+
+  <!-- Counter.dev (Kim Sze standard) — put your real data-id -->
+  <!-- <script src="https://counter.dev/script.js" data-id="YOUR_COUNTER_DEV_ID" data-pathname="true" data-utcoffset="8"></script> -->
+
+  <style>
+    :root{
+      --ink:#0f172a;
+      --muted:#64748b;
+      --card:rgba(255,255,255,.85);
+      --line:rgba(15,23,42,.10);
+      --shadow: 0 18px 50px rgba(2,6,23,.14);
+      --radius: 22px;
+      --good:#16a34a;
+      --bad:#ef4444;
+      --accent:#7c3aed;
+      --accent2:#06b6d4;
+      --accent3:#22c55e;
+      --warn:#f59e0b;
+      --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--ink);
+      min-height:100dvh;
+      overflow-x:hidden;
+      background:
+        radial-gradient(900px 500px at 18% 10%, rgba(124,58,237,.22), transparent 60%),
+        radial-gradient(900px 500px at 85% 15%, rgba(6,182,212,.18), transparent 58%),
+        radial-gradient(900px 500px at 45% 92%, rgba(34,197,94,.12), transparent 58%),
+        linear-gradient(180deg, #f7fbff, #fff7f1);
+    }
+
+    /* floating stars */
+    .stars{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0;}
+    .star{
+      position:absolute; width:6px; height:6px; border-radius:999px;
+      background:rgba(255,255,255,.95);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.20), 0 0 22px rgba(255,255,255,.45);
+      animation: drift 9s linear infinite;
+      opacity:.9;
+    }
+    @keyframes drift{
+      from{ transform: translateY(110vh) scale(.9); opacity:0; }
+      10%{ opacity:.9; }
+      to{ transform: translateY(-20vh) scale(1.15); opacity:0; }
+    }
+
+    .wrap{
+      position:relative; z-index:1;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 14px 34px;
+    }
+
+    .topbar{
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+      flex-wrap:wrap;
+      margin: 6px 0 12px;
+    }
+
+    .badge{
+      display:inline-flex; align-items:center; gap:10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 26px rgba(2,6,23,.08);
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+    }
+    .badge strong{font-size:14px}
+    .small{font-size:12px; color:var(--muted)}
+    .pill{
+      padding: 6px 10px; border-radius:999px;
+      background: rgba(124,58,237,.10);
+      border:1px solid rgba(124,58,237,.20);
+      color:#4c1d95;
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
+    .btn{
+      appearance:none; border:1px solid var(--line); background: rgba(255,255,255,.85);
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-weight:900;
+      color:var(--ink);
+      cursor:pointer;
+      box-shadow: 0 10px 24px rgba(2,6,23,.08);
+      transition: transform .06s ease, box-shadow .18s ease, background .18s ease;
+      display:inline-flex; align-items:center; gap:10px;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(2,6,23,.12); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(6,182,212,.92));
+      color:white; border-color: rgba(255,255,255,.12);
+    }
+    .btn.danger{
+      background: rgba(239,68,68,.10);
+      border-color: rgba(239,68,68,.22);
+      color:#991b1b;
+    }
+    .btn[disabled]{opacity:.55; cursor:not-allowed; transform:none;}
+
+    .timerBox{
+      display:flex; gap:10px; align-items:center;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .timerNum{ font-variant-numeric: tabular-nums; font-size: 16px; }
+    .timerBar{ height:10px; width: 140px; border-radius: 999px; background: rgba(15,23,42,.08); overflow:hidden;}
+    .timerFill{
+      height:100%; width:100%;
+      background: linear-gradient(90deg, rgba(34,197,94,.95), rgba(6,182,212,.92), rgba(124,58,237,.92));
+      transform-origin:left center; transform: scaleX(1); transition: transform .25s linear;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 14px;
+      align-items:stretch;
+    }
+    @media (max-width: 860px){
+      .grid{grid-template-columns:1fr;}
+      .actions{justify-content:flex-start;}
+    }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+      position:relative;
+    }
+    .head{
+      padding: 14px 16px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .body{ padding: 16px; }
+
+    .progress{
+      display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+    }
+    .dot{
+      width: 32px; height: 32px; border-radius:999px;
+      display:grid; place-items:center;
+      font-weight:950; font-size:13px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .dot.current{ outline: 3px solid rgba(124,58,237,.28); }
+    .dot.good{ background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.25); color:#14532d;}
+    .dot.bad{ background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.22); color:#7f1d1d;}
+    .dot.done{ background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.25); color:#78350f;}
+
+    .statusLine{ color:var(--muted); font-weight:800; }
+
+    /* screens */
+    .screen{display:none;}
+    .screen.show{display:block;}
+
+    /* question view */
+    .question{
+      display:grid; gap: 12px;
+      place-items:center;
+      padding: 10px 0 4px;
+    }
+    .bigMath{
+      font-weight: 1000;
+      font-size: clamp(44px, 6.3vw, 72px);
+      letter-spacing: -1px;
+      display:flex; gap:16px; align-items:baseline;
+      text-shadow: 0 10px 24px rgba(2,6,23,.10);
+    }
+    .bigMath .plus{ color: rgba(124,58,237,.95); }
+    .bigMath .eq{ color: rgba(6,182,212,.95); }
+
+    .answerRow{
+      display:flex; gap: 10px; align-items:center; justify-content:center;
+      flex-wrap:wrap;
+    }
+    .input{
+      width: 170px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 2px solid rgba(124,58,237,.18);
+      background: rgba(255,255,255,.92);
+      font-size: 22px;
+      font-weight: 950;
+      text-align:center;
+      outline:none;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      transition: border-color .18s ease, transform .06s ease;
+    }
+    .input:focus{ border-color: rgba(124,58,237,.45); transform: translateY(-1px); }
+    .shake{ animation: shake .22s linear 0s 2; }
+    @keyframes shake{
+      0%{transform:translateX(0)}
+      25%{transform:translateX(-7px)}
+      50%{transform:translateX(7px)}
+      75%{transform:translateX(-5px)}
+      100%{transform:translateX(0)}
+    }
+
+    /* hint + reveal */
+    #hintBox{ display:none; }
+    #hintBox.show{ display:block; }
+
+    .hint{
+      margin-top: 12px;
+      border-radius: 18px;
+      border: 1px dashed rgba(100,116,139,.35);
+      background: rgba(248,250,252,.72);
+      padding: 12px 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      width:100%;
+    }
+    .hint strong{color: var(--ink)}
+    .steps{
+      margin-top: 8px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 10px;
+      color: var(--ink);
+      font-weight: 900;
+    }
+    .steps div{margin:4px 0}
+    .reveal{
+      margin-top: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(239,68,68,.22);
+      background: rgba(239,68,68,.07);
+      padding: 12px 12px;
+      display:none;
+      width:100%;
+    }
+    .reveal.show{display:block;}
+    .reveal .ans{
+      font-weight:1000;
+      font-size: 18px;
+      color:#7f1d1d;
+    }
+
+    /* side */
+    .side{ display:grid; gap: 14px; }
+
+    .mascot{ display:grid; grid-template-columns: 120px 1fr; gap: 12px; align-items:center; }
+    .buddyIcon{
+      width:120px; height:120px;
+      border-radius:999px;
+      background: rgba(255,255,255,.65);
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: 0 12px 26px rgba(2,6,23,.08);
+      display:grid; place-items:center;
+      font-size: 54px;
+      user-select:none;
+    }
+
+    .talk{
+      background: rgba(255,255,255,.88);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px 12px;
+      box-shadow: 0 12px 26px rgba(2,6,23,.08);
+    }
+    .talk h3{margin:0 0 6px; font-size:16px}
+    .talk p{margin:0; color:var(--muted); line-height:1.35; font-size:13px}
+
+    .scoreBox{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding: 12px 12px;
+      border-radius: 18px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 12px 26px rgba(2,6,23,.08);
+    }
+    .scoreBig{ font-weight: 1000; font-size: 22px; letter-spacing:-.5px; }
+    .scoreBig span{ color: rgba(124,58,237,.95); }
+    .chip{
+      font-weight: 900;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(15,23,42,.03);
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    /* rocket float */
+    .floaty{ animation: floaty 2.8s ease-in-out infinite; transform-origin:center; }
+    @keyframes floaty{ 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-8px) } }
+
+    /* confetti */
+    #confetti{ position:fixed; inset:0; pointer-events:none; z-index:30; display:none; }
+
+    /* settings panel */
+    .timingPanel{
+      position:fixed; right:14px; top:72px;
+      width:min(380px, calc(100vw - 28px));
+      z-index:15;
+      display:none;
+    }
+    .timingPanel.show{display:block;}
+    .panelShell{
+      background: rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 18px 60px rgba(2,6,23,.18);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .phead{
+      padding: 12px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-weight: 950;
+    }
+    .pbody{ padding: 12px 14px; color:var(--muted); }
+    .rangeRow{ display:flex; gap:12px; align-items:center; }
+    input[type="range"]{ width: 100%; }
+    .kv{ font-variant-numeric: tabular-nums; font-weight: 1000; color: var(--ink); }
+
+    /* results */
+    .results{ display:none; padding: 14px 0 6px; }
+    .results.show{display:block;}
+    .scoreHuge{
+      font-weight:1000;
+      font-size: clamp(28px, 5vw, 46px);
+      letter-spacing:-.8px;
+      text-align:center;
+    }
+    .scoreHuge span{ color: rgba(124,58,237,.95); }
+    .resultMsg{
+      text-align:center;
+      color:var(--muted);
+      margin-top: 8px;
+      font-weight:800;
+    }
+
+    footer{ margin-top: 12px; color: rgba(100,116,139,.9); font-size: 12px; text-align:center; padding: 8px 0 2px; }
+  </style>
+</head>
+
+<body>
+  <div class="stars" id="stars"></div>
+  <canvas id="confetti"></canvas>
+
+  <!-- Settings panel (kept, but teacher setup screen removed) -->
+  <div class="timingPanel" id="timingPanel" aria-hidden="true">
+    <div class="panelShell">
+      <div class="phead">
+        <div>⚙️ Quiz Settings</div>
+        <button class="btn" id="closeTiming" type="button" aria-label="Close settings">✖</button>
+      </div>
+      <div class="pbody">
+        <div class="small" style="margin-bottom:10px;">
+          Default is <b>8 questions</b> and <b>25 seconds</b>.
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <div style="min-width:160px;">
+            <div class="small" style="margin-bottom:6px;"><b>Number of questions</b></div>
+            <select id="setN" style="width:100%; padding:10px 12px; border-radius:16px; font-weight:900;">
+              <option value="8" selected>8</option>
+              <option value="10">10</option>
+              <option value="12">12</option>
+            </select>
+          </div>
+
+          <div style="min-width:160px;">
+            <div class="small" style="margin-bottom:6px;"><b>Second number range</b></div>
+            <select id="setRange" style="width:100%; padding:10px 12px; border-radius:16px; font-weight:900;">
+              <option value="10">10–99</option>
+              <option value="20" selected>20–99</option>
+              <option value="30">30–99</option>
+              <option value="40">40–99</option>
+              <option value="50">50–99</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="rangeRow">
+          <input id="timeRange" type="range" min="10" max="60" step="1" value="25" />
+          <div class="kv"><span id="timeVal">25</span>s</div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+          <button class="btn primary" id="applyTiming" type="button">Apply & Restart</button>
+          <button class="btn" id="resetTiming" type="button">Reset defaults</button>
+        </div>
+
+        <div class="small" style="margin-top:10px;">
+          Tip: Make 100 first, then add the rest.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="topbar">
+      <div class="badge">
+        <div style="font-size:18px;">🧠</div>
+        <div>
+          <div><strong>Make 100 Quiz</strong> <span class="pill" id="qCountPill">8 questions</span></div>
+          <div class="small"><b id="qIndexTxt">1</b> / <b id="qTotalTxt">8</b> • timed practice</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="timerBox" title="Time left">
+          ⏱️ <span class="timerNum" id="timeLeft">—</span>s
+          <div class="timerBar" aria-hidden="true"><div class="timerFill" id="timerFill"></div></div>
+        </div>
+
+        <button class="btn" id="soundBtn" type="button">🔊 Sound: ON</button>
+       
+        <button class="btn" id="timingBtn" type="button">⚙️ Settings</button>
+        <button class="btn danger" id="restartAll" type="button">↻ Restart</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Main -->
+      <div class="card">
+        <div class="head">
+          <div class="progress" id="progressRow"></div>
+          <div class="statusLine" id="statusTxt">Make 100 first, then add the rest!</div>
+        </div>
+
+        <div class="body">
+
+          <!-- QUIZ (starts immediately) -->
+          <div class="screen show" id="quizView">
+            <div class="question">
+              <div class="bigMath" aria-label="Addition question">
+                <span id="aTxt">97</span>
+                <span class="plus">+</span>
+                <span id="bTxt">50</span>
+                <span class="eq">=</span>
+                <span style="opacity:.35;">?</span>
+              </div>
+
+              <div class="answerRow">
+                <input class="input" id="ansInput" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Answer" aria-label="Type your answer"/>
+                <button class="btn primary" id="checkBtn" type="button">Check ✅</button>
+                <button class="btn" id="tryAgainBtn" type="button" style="display:none;">Try Again</button>
+                <button class="btn" id="nextBtn" type="button" disabled>Next ➜</button>
+              </div>
+
+              <!-- Shown only on wrong / time-up -->
+              <div class="hint" id="hintBox">
+                <strong>Remember: Make 100 first, then add the rest.</strong>
+                <div class="steps" id="stepsBox"></div>
+                <div class="small" style="margin-top:8px;">
+                  Scoring rule: If your <b>first attempt</b> is wrong (or time-up), this question becomes <b>0 mark</b> — but you can still practise.
+                </div>
+              </div>
+
+              <div class="reveal" id="revealBox">
+                <div class="ans">⏰ Time’s up — Answer: <span id="revealAns">—</span></div>
+                <div class="small" style="margin-top:6px;">
+                  You can press <b>Try Again</b> to practice, or wait for the next restart.
+                </div>
+              </div>
+
+              <footer>Designed by Lim Kim Sze © 2026</footer>
+            </div>
+          </div>
+
+          <!-- RESULTS -->
+          <div class="results" id="resultsView">
+            <div class="scoreHuge">Score: <span id="finalScore">0</span> / <span id="finalTotal">8</span></div>
+            <div class="resultMsg" id="finalMsg">Nice work!</div>
+
+            <div style="height:14px"></div>
+            <div class="hint">
+              <strong>Progress</strong>
+              <div class="small" style="margin-top:6px;">Green = correct on first try within time. Red = time ran out. Yellow = eventually correct but 0 mark.</div>
+              <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;" id="finalDots"></div>
+            </div>
+
+            <div style="height:14px"></div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+              <button class="btn primary" id="restartFromResults" type="button">↻ Restart the challenge</button>
+              <button class="btn" id="openSettingsFromResults" type="button">⚙️ Settings</button>
+            </div>
+
+            <footer>Designed by Lim Kim Sze © 2026</footer>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Side -->
+      <div class="side">
+        <div class="card">
+          <div class="head">
+            <div style="font-weight:1000;">Math Buddy</div>
+            <div class="chip" id="modeChip">Timed mode</div>
+          </div>
+          <div class="body">
+            <div class="mascot">
+              <div class="buddyIcon floaty" aria-hidden="true">🧠</div>
+              <div class="talk">
+                <h3 id="buddyTitle">Mission: Make 100!</h3>
+                <p id="buddyText">Make 100 first, then add the rest. Try to get it correct on your first try!</p>
+              </div>
+            </div>
+
+            <div style="height:12px"></div>
+
+            <div class="scoreBox">
+              <div>
+                <div class="small">Total score</div>
+                <div class="scoreBig"><span id="scoreNow">0</span> / <span id="scoreTotal">8</span></div>
+              </div>
+              <div class="chip" id="timingChip">Time: 25s</div>
+            </div>
+
+            <div style="height:12px"></div>
+            <div class="small">
+              ✅ First-try correct = +1 mark + confetti<br/>
+              ❌ Any first wrong attempt = 0 mark for that question<br/>
+              ⏰ Time up = answer revealed + Try Again<br/>
+              ⭐ Correct = auto next in 2 seconds (Next stays disabled)
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head">
+            <div style="font-weight:1000;">Quick Steps</div>
+            <div class="pill">Make 100 → Add rest</div>
+          </div>
+          <div class="body" style="color:var(--muted); line-height:1.4;">
+            <div><b>Step 1:</b> Find how much to add to reach 100.</div>
+            <div><b>Step 2:</b> Use that part from the second number.</div>
+            <div><b>Step 3:</b> Add 100 to the remaining amount.</div>
+            <div style="margin-top:10px;" class="small">
+              Example: 97 + 50 → 97 + 3 = 100, then 100 + 47 = 147
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   MAKE 100 — /quiz plumbing (teacher setup screen removed)
+   ========================= */
+(function(){
+  const ACTIVITY_ID = "https://limkimsze-maker.github.io/Quiz_Make100/";
+  const $ = (id)=>document.getElementById(id);
+
+  const els = {
+    stars: $("stars"),
+    confetti: $("confetti"),
+
+    qCountPill: $("qCountPill"),
+    qIndexTxt: $("qIndexTxt"),
+    qTotalTxt: $("qTotalTxt"),
+
+    timeLeft: $("timeLeft"),
+    timerFill: $("timerFill"),
+
+    soundBtn: $("soundBtn"),
+    timingBtn: $("timingBtn"),
+    restartAll: $("restartAll"),
+
+    timingPanel: $("timingPanel"),
+    closeTiming: $("closeTiming"),
+    timeRange: $("timeRange"),
+    timeVal: $("timeVal"),
+    setN: $("setN"),
+    setRange: $("setRange"),
+    applyTiming: $("applyTiming"),
+    resetTiming: $("resetTiming"),
+
+    progressRow: $("progressRow"),
+    statusTxt: $("statusTxt"),
+
+    quizView: $("quizView"),
+    resultsView: $("resultsView"),
+
+    aTxt: $("aTxt"),
+    bTxt: $("bTxt"),
+    ansInput: $("ansInput"),
+    checkBtn: $("checkBtn"),
+    tryAgainBtn: $("tryAgainBtn"),
+    nextBtn: $("nextBtn"),
+    hintBox: $("hintBox"),
+    stepsBox: $("stepsBox"),
+    revealBox: $("revealBox"),
+    revealAns: $("revealAns"),
+
+    buddyTitle: $("buddyTitle"),
+    buddyText: $("buddyText"),
+    scoreNow: $("scoreNow"),
+    scoreTotal: $("scoreTotal"),
+    timingChip: $("timingChip"),
+    modeChip: $("modeChip"),
+
+    finalScore: $("finalScore"),
+    finalTotal: $("finalTotal"),
+    finalMsg: $("finalMsg"),
+    finalDots: $("finalDots"),
+    restartFromResults: $("restartFromResults"),
+    openSettingsFromResults: $("openSettingsFromResults"),
+  };
+
+  /* --------- stars --------- */
+  (function initStars(){
+    const n = 18;
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random()*100 + 'vw';
+      s.style.animationDelay = (Math.random()*9) + 's';
+      s.style.animationDuration = (7 + Math.random()*7) + 's';
+      s.style.opacity = (0.65 + Math.random()*0.35).toFixed(2);
+      const size = 4 + Math.random()*6;
+      s.style.width = size+'px';
+      s.style.height = size+'px';
+      els.stars.appendChild(s);
+    }
+  })();
+
+  /* --------- audio --------- */
+   /* --------- audio --------- */
+  let soundOn = true;          // ✅ default ON
+  let audioUnlocked = false;   // browser requires first user gesture
+
+  const sndWrong = new Audio("./wrong.mp3");
+  const sndCorrect = new Audio("./correct.mp3");
+  const sndClock = new Audio("./clock.mp3");
+  [sndWrong, sndCorrect, sndClock].forEach(a=>{
+    try{ a.preload = "auto"; a.volume = 0.95; }catch{}
+  });
+
+  function updateSoundUI(){
+    if(!els.soundBtn) return;
+    els.soundBtn.textContent = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+  }
+
+  function unlockAudio(){
+    if(audioUnlocked) return;
+    audioUnlocked = true;
+
+    // Prime audio silently on first gesture
+    try{
+      [sndWrong, sndCorrect, sndClock].forEach(a=>{
+        try{
+          a.muted = true;
+          const p = a.play();
+          if(p && typeof p.then === "function"){
+            p.then(()=>{
+              try{ a.pause(); a.currentTime = 0; }catch{}
+              a.muted = false;
+            }).catch(()=>{ a.muted = false; });
+          }else{
+            try{ a.pause(); a.currentTime = 0; }catch{}
+            a.muted = false;
+          }
+        }catch{}
+      });
+    }catch{}
+  }
+
+  function safePlay(a){
+    if(!soundOn) return;
+    // If still locked, just skip quietly (it'll work after first tap/keypress)
+    if(!audioUnlocked) return;
+    try{ a.currentTime = 0; a.play().catch(()=>{}); }catch{}
+  }
+
+  // ✅ Auto-unlock on FIRST interaction anywhere (no extra button needed)
+  window.addEventListener("pointerdown", unlockAudio, { once:true, capture:true });
+  window.addEventListener("keydown", unlockAudio, { once:true, capture:true });
+  window.addEventListener("touchstart", unlockAudio, { once:true, capture:true, passive:true });
+
+  // Toggle sound OFF/ON
+  els.soundBtn.addEventListener("click", ()=>{
+    // clicking is a gesture → unlock when turning ON
+    soundOn = !soundOn;
+    if(soundOn) unlockAudio();
+    updateSoundUI();
+  });
+
+  updateSoundUI();
+
+  /* --------- settings (defaults) --------- */
+  const settings = {
+    n: 8,
+    timing: 25,
+    minB: 20
+  };
+
+  function syncSettingsToUI(){
+    els.setN.value = String(settings.n);
+    els.setRange.value = String(settings.minB);
+    els.timeRange.value = String(settings.timing);
+    els.timeVal.textContent = String(settings.timing);
+
+    els.qCountPill.textContent = `${settings.n} questions`;
+    els.timingChip.textContent = `Time: ${settings.timing}s`;
+    els.scoreTotal.textContent = String(settings.n);
+  }
+
+  /* --------- quiz generation --------- */
+  function rint(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+  function makeOne(minB){
+    const a = rint(91,99);
+    const need = 100 - a;              // 1..9
+    const b = rint(minB,99);
+    const rest = b - need;
+    if(rest < 0) return null;
+    const sum = a + b;
+    return { a, b, need, rest, sum };
+  }
+
+  function generateQuestions(n, minB){
+    const out = [];
+    const seen = new Set();
+    let guard = 0;
+    while(out.length < n && guard < 5000){
+      guard++;
+      const q = makeOne(minB);
+      if(!q) continue;
+      const key = q.a+"+"+q.b;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      out.push(q);
+    }
+    while(out.length < n){
+      out.push({a:97, b:50, need:3, rest:47, sum:147});
+    }
+    return out;
+  }
+
+  function formatSteps(q){
+    return [
+      `1) Make 100: ${q.a} + ${q.need} = 100`,
+      `2) Add the rest: 100 + ${q.rest} = ${q.sum}`
+    ];
+  }
+
+  /* --------- confetti --------- */
+  function confettiBoom(ms=1600){
+    const canvas = els.confetti;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width = window.innerWidth;
+    const H = canvas.height = window.innerHeight;
+    canvas.style.display = "block";
+
+    const pieces = [];
+    const count = 130;
+    for(let i=0;i<count;i++){
+      pieces.push({
+        x: Math.random()*W,
+        y: -20 - Math.random()*H*0.2,
+        vx: (Math.random()*2-1)*3.2,
+        vy: 2 + Math.random()*5.2,
+        r: 4 + Math.random()*5,
+        a: Math.random()*Math.PI*2,
+        va: (Math.random()*2-1)*0.25,
+        h: Math.floor(Math.random()*360)
+      });
+    }
+
+    let start = performance.now();
+    function frame(now){
+      const t = now - start;
+      ctx.clearRect(0,0,W,H);
+      for(const p of pieces){
+        p.x += p.vx;
+        p.y += p.vy;
+        p.a += p.va;
+        p.vy += 0.03;
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        ctx.rotate(p.a);
+        ctx.fillStyle = `hsla(${p.h}, 90%, 55%, .9)`;
+        ctx.fillRect(-p.r, -p.r/2, p.r*2, p.r);
+        ctx.restore();
+      }
+      if(t < ms) requestAnimationFrame(frame);
+      else{
+        canvas.style.display = "none";
+        ctx.clearRect(0,0,W,H);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* --------- UI helpers --------- */
+  function setStatus(text, kind){
+    els.statusTxt.textContent = text;
+    els.statusTxt.style.color = kind==="good" ? "var(--good)" :
+                                kind==="bad"  ? "var(--bad)"  : "var(--muted)";
+  }
+
+  function setTimerVisual(){
+    if(state.mode !== "quiz"){
+      els.timeLeft.textContent = "—";
+      els.timerFill.style.transform = `scaleX(1)`;
+      return;
+    }
+    els.timeLeft.textContent = String(state.secondsLeft);
+    const ratio = Math.max(0, Math.min(1, state.secondsLeft / state.secondsTotal));
+    els.timerFill.style.transform = `scaleX(${ratio})`;
+  }
+
+  function renderProgress(){
+    els.progressRow.innerHTML = "";
+    for(let i=0;i<state.questions.length;i++){
+      const d = document.createElement("div");
+      d.className = "dot";
+      if(i===state.idx) d.classList.add("current");
+      if(state.status[i]==="correct") d.classList.add("good");
+      if(state.status[i]==="timeout") d.classList.add("bad");
+      if(state.status[i]==="done") d.classList.add("done");
+      d.textContent = String(i+1);
+      els.progressRow.appendChild(d);
+    }
+  }
+
+  function updateTop(){
+    els.qCountPill.textContent = `${settings.n} questions`;
+    els.qIndexTxt.textContent = String(state.idx+1);
+    els.qTotalTxt.textContent = String(state.questions.length);
+  }
+
+  function updateSide(){
+    els.scoreNow.textContent = String(state.score);
+    els.scoreTotal.textContent = String(state.questions.length || settings.n);
+    els.timingChip.textContent = `Time: ${settings.timing}s`;
+    els.modeChip.textContent = state.mode === "results" ? "Results" : "Timed mode";
+    updateSoundUI();
+  }
+
+  /* --------- state --------- */
+  const state = {
+    mode: "quiz",         // quiz | results
+    questions: [],
+    idx: 0,
+    score: 0,
+    status: [],
+    hadWrong: [],
+    secondsTotal: 25,
+    secondsLeft: 25,
+    timer: null,
+    locked: false,
+    timedOutThisQ: false,
+    practiceMode: false
+  };
+
+  function stopTimer(){
+    if(state.timer){ clearInterval(state.timer); state.timer = null; }
+  }
+
+  function startTimer(){
+    stopTimer();
+    state.secondsTotal = settings.timing;
+    state.secondsLeft = state.secondsTotal;
+    state.locked = false;
+    state.practiceMode = false;
+    state.timedOutThisQ = false;
+
+    els.ansInput.disabled = false;
+    els.ansInput.value = "";
+    els.checkBtn.disabled = false;
+
+    els.nextBtn.disabled = true;
+    els.tryAgainBtn.style.display = "none";
+    els.revealBox.classList.remove("show");
+    els.hintBox.classList.remove("show");
+
+    setStatus("Make 100 first, then add the rest!", "neutral");
+    els.buddyTitle.textContent = "Mission: Make 100!";
+    els.buddyText.textContent = "Try to get it correct on your first try!";
+    updateSide();
+    setTimerVisual();
+
+    state.timer = setInterval(()=>{
+      if(state.locked) return;
+      state.secondsLeft--;
+      setTimerVisual();
+      if(state.secondsLeft === 5){
+        safePlay(sndClock);
+      }
+      if(state.secondsLeft <= 0){
+        stopTimer();
+        onTimeUp();
+      }
+    }, 1000);
+  }
+
+  function loadQuestion(i){
+    state.mode = "quiz";
+    state.idx = i;
+    const q = state.questions[state.idx];
+
+    updateTop();
+
+    els.aTxt.textContent = String(q.a);
+    els.bTxt.textContent = String(q.b);
+
+    const steps = formatSteps(q);
+    els.stepsBox.innerHTML = steps.map(s=>`<div>${s}</div>`).join("");
+    els.revealAns.textContent = String(q.sum);
+
+    renderProgress();
+    updateSide();
+    setTimerVisual();
+
+    startTimer();
+    els.ansInput.focus();
+  }
+
+  function handleWrong(){
+    state.hadWrong[state.idx] = true;
+    els.hintBox.classList.add("show");
+    safePlay(sndWrong);
+
+    els.ansInput.classList.remove("shake");
+    void els.ansInput.offsetWidth;
+    els.ansInput.classList.add("shake");
+
+    setStatus("Not yet — make 100 first, then add the rest.", "bad");
+    els.buddyTitle.textContent = "Try again!";
+    els.buddyText.textContent = "Use the steps: make 100, then add the rest.";
+  }
+
+  function onTimeUp(){
+    state.hadWrong[state.idx] = true;
+
+    els.hintBox.classList.add("show");
+    state.timedOutThisQ = true;
+    state.practiceMode = true;
+
+    if(state.status[state.idx] !== "correct") state.status[state.idx] = "timeout";
+    renderProgress();
+
+    safePlay(sndWrong);
+    setStatus("Time’s up — answer revealed. Press Try Again to practise.", "bad");
+
+    els.revealBox.classList.add("show");
+    els.tryAgainBtn.style.display = "inline-flex";
+    els.nextBtn.disabled = false;
+    updateSide();
+  }
+
+  function handleCorrect(){
+    stopTimer();
+    safePlay(sndCorrect);
+    confettiBoom(1600);
+
+    const canScore = (!state.timedOutThisQ && !state.practiceMode && state.status[state.idx] !== "timeout" && !state.hadWrong[state.idx]);
+
+    if(canScore && state.status[state.idx] !== "correct"){
+      state.status[state.idx] = "correct";
+      state.score++;
+    }else{
+      if(state.status[state.idx] !== "timeout") state.status[state.idx] = "done";
+    }
+
+    renderProgress();
+    updateSide();
+
+    state.locked = true;
+    els.ansInput.disabled = true;
+    els.checkBtn.disabled = true;
+
+    // correct → auto next, Next stays disabled
+    els.nextBtn.disabled = true;
+
+    setStatus("Correct! 🎉 Next question in 2 seconds…", "good");
+    els.buddyTitle.textContent = "Awesome!";
+    els.buddyText.textContent = "Auto-going to the next question.";
+
+    setTimeout(()=>goNext(), 2000);
+  }
+
+  function checkAnswer(){
+  unlockAudio();
+
+    if(state.mode !== "quiz" || state.locked) return;
+
+    const q = state.questions[state.idx];
+    const raw = (els.ansInput.value || "").trim();
+    const val = parseInt(raw, 10);
+
+    if(!Number.isFinite(val)) return handleWrong();
+    if(val === q.sum) return handleCorrect();
+    return handleWrong();
+  }
+
+  function goNext(){
+    if(state.mode !== "quiz") return;
+    if(state.idx < state.questions.length - 1){
+      loadQuestion(state.idx + 1);
+    }else{
+      showResults();
+    }
+  }
+
+  function tryAgain(){
+    state.practiceMode = true;
+    state.timedOutThisQ = false;
+
+    els.revealBox.classList.remove("show");
+    els.ansInput.value = "";
+    els.ansInput.disabled = false;
+    els.checkBtn.disabled = false;
+    els.nextBtn.disabled = false;
+
+    setStatus("Practice try (no score). Try to get it right!", "neutral");
+    els.buddyTitle.textContent = "Practice time!";
+    els.buddyText.textContent = "Use the steps, then type the answer.";
+
+    startTimer();
+  }
+
+  function showResults(){
+    stopTimer();
+    state.mode = "results";
+
+    els.quizView.classList.remove("show");
+    els.resultsView.classList.add("show");
+
+    els.finalScore.textContent = String(state.score);
+    els.finalTotal.textContent = String(state.questions.length);
+
+    let msg = "Nice work! Keep making 100 first.";
+    if(state.score === state.questions.length) msg = "Perfect score! 🌟 Super fast!";
+    else if(state.score >= Math.ceil(state.questions.length*0.7)) msg = "Great job! Try 20 seconds next time!";
+    else msg = "Good effort! Focus on making 100 first, then add the rest.";
+    els.finalMsg.textContent = msg;
+
+    els.finalDots.innerHTML = "";
+    for(let i=0;i<state.questions.length;i++){
+      const d = document.createElement("div");
+      d.className = "dot";
+      d.textContent = String(i+1);
+      if(state.status[i]==="correct") d.classList.add("good");
+      if(state.status[i]==="timeout") d.classList.add("bad");
+      if(state.status[i]==="done") d.classList.add("done");
+      els.finalDots.appendChild(d);
+    }
+
+    setStatus("Quiz complete. See your progress below!", "neutral");
+    setTimerVisual();
+    updateSide();
+  }
+
+  function restartQuiz(){
+    stopTimer();
+
+    // ensure results hidden, quiz shown
+    els.resultsView.classList.remove("show");
+    els.quizView.classList.add("show");
+
+    state.mode = "quiz";
+    state.questions = generateQuestions(settings.n, settings.minB);
+    state.idx = 0;
+    state.score = 0;
+    state.status = Array(state.questions.length).fill(null);
+    state.hadWrong = Array(state.questions.length).fill(false);
+    state.locked = false;
+    state.timedOutThisQ = false;
+    state.practiceMode = false;
+
+    syncSettingsToUI();
+    loadQuestion(0);
+  }
+
+  /* --------- settings panel --------- */
+  function openTiming(){
+    els.timingPanel.classList.add("show");
+    els.timingPanel.setAttribute("aria-hidden","false");
+
+    els.setN.value = String(settings.n);
+    els.setRange.value = String(settings.minB);
+    els.timeRange.value = String(settings.timing);
+    els.timeVal.textContent = String(settings.timing);
+  }
+  function closeTiming(){
+    els.timingPanel.classList.remove("show");
+    els.timingPanel.setAttribute("aria-hidden","true");
+  }
+
+  els.timeRange.addEventListener("input", ()=>{
+    els.timeVal.textContent = els.timeRange.value;
+  });
+
+  els.applyTiming.addEventListener("click", ()=>{
+    settings.n = parseInt(els.setN.value,10) || 8;
+    settings.minB = parseInt(els.setRange.value,10) || 20;
+    settings.timing = Math.max(10, Math.min(60, parseInt(els.timeRange.value,10) || 25));
+    closeTiming();
+    restartQuiz();
+  });
+
+  els.resetTiming.addEventListener("click", ()=>{
+    settings.n = 8;
+    settings.timing = 25;
+    settings.minB = 20;
+    syncSettingsToUI();
+  });
+
+  /* --------- wiring --------- */
+  els.checkBtn.addEventListener("click", checkAnswer);
+  els.ansInput.addEventListener("keydown", (e)=>{ if(e.key==="Enter") checkAnswer(); });
+
+  els.nextBtn.addEventListener("click", goNext);
+  els.tryAgainBtn.addEventListener("click", tryAgain);
+
+  els.timingBtn.addEventListener("click", openTiming);
+  els.openSettingsFromResults.addEventListener("click", openTiming);
+  els.closeTiming.addEventListener("click", closeTiming);
+
+  els.restartAll.addEventListener("click", restartQuiz);
+  els.restartFromResults.addEventListener("click", restartQuiz);
+
+  /* --------- init (auto start) --------- */
+  syncSettingsToUI();
+
+  // build first quiz immediately
+  state.questions = generateQuestions(settings.n, settings.minB);
+  state.status = Array(state.questions.length).fill(null);
+  state.hadWrong = Array(state.questions.length).fill(false);
+
+  // ensure correct screen
+  els.resultsView.classList.remove("show");
+  els.quizView.classList.add("show");
+
+  loadQuestion(0);
+})();
+</script>
+</body>
+</html>
+
+
+
