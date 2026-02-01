@@ -91,7 +91,7 @@
       position:relative; z-index:1;
       max-width: 980px;
       margin: 0 auto;
-      padding: 18px 14px 34px;
+      padding: 18px 14px 92px; /* extra bottom space so the fixed button never covers content */
     }
 
     .topbar{
@@ -396,6 +396,37 @@
     }
 
     footer{ margin-top: 12px; color: rgba(100,116,139,.9); font-size: 12px; text-align:center; padding: 8px 0 2px; }
+
+    /* =========================
+       ✅ Back to Main Menu button (bottom center) — does NOT block anything
+       ========================= */
+    .mainMenuWrap{
+      position:fixed;
+      left:50%;
+      bottom:12px;
+      transform:translateX(-50%);
+      z-index:50;
+      pointer-events:auto;
+    }
+    .mainMenuBtn{
+      appearance:none;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.92);
+      border-radius:999px;
+      padding: 11px 14px;
+      font-weight:950;
+      color:var(--ink);
+      text-decoration:none;
+      box-shadow: 0 16px 44px rgba(2,6,23,.16);
+      backdrop-filter: blur(10px);
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      user-select:none;
+      transition: transform .06s ease, box-shadow .18s ease;
+    }
+    .mainMenuBtn:hover{ transform: translateY(-1px); box-shadow: 0 18px 52px rgba(2,6,23,.18); }
+    .mainMenuBtn:active{ transform: translateY(0px); }
   </style>
 </head>
 
@@ -471,7 +502,6 @@
         </div>
 
         <button class="btn" id="soundBtn" type="button">🔊 Sound: ON</button>
-       
         <button class="btn" id="timingBtn" type="button">⚙️ Settings</button>
         <button class="btn danger" id="restartAll" type="button">↻ Restart</button>
       </div>
@@ -603,6 +633,13 @@
     </div>
   </div>
 
+  <!-- ✅ Back to Main Menu (bottom center) -->
+  <div class="mainMenuWrap">
+    <a class="mainMenuBtn" href="https://limkimsze-maker.github.io/P3_Mental_Sum_Challenge/" aria-label="Back to Main Menu">
+      ⬅ Back to Main Menu
+    </a>
+  </div>
+
 <script>
 /* =========================
    MAKE 100 — /quiz plumbing (teacher setup screen removed)
@@ -685,7 +722,6 @@
   })();
 
   /* --------- audio --------- */
-   /* --------- audio --------- */
   let soundOn = true;          // ✅ default ON
   let audioUnlocked = false;   // browser requires first user gesture
 
@@ -727,19 +763,15 @@
 
   function safePlay(a){
     if(!soundOn) return;
-    // If still locked, just skip quietly (it'll work after first tap/keypress)
     if(!audioUnlocked) return;
     try{ a.currentTime = 0; a.play().catch(()=>{}); }catch{}
   }
 
-  // ✅ Auto-unlock on FIRST interaction anywhere (no extra button needed)
   window.addEventListener("pointerdown", unlockAudio, { once:true, capture:true });
   window.addEventListener("keydown", unlockAudio, { once:true, capture:true });
   window.addEventListener("touchstart", unlockAudio, { once:true, capture:true, passive:true });
 
-  // Toggle sound OFF/ON
   els.soundBtn.addEventListener("click", ()=>{
-    // clicking is a gesture → unlock when turning ON
     soundOn = !soundOn;
     if(soundOn) unlockAudio();
     updateSoundUI();
@@ -1031,7 +1063,6 @@
     els.ansInput.disabled = true;
     els.checkBtn.disabled = true;
 
-    // correct → auto next, Next stays disabled
     els.nextBtn.disabled = true;
 
     setStatus("Correct! 🎉 Next question in 2 seconds…", "good");
@@ -1042,7 +1073,7 @@
   }
 
   function checkAnswer(){
-  unlockAudio();
+    unlockAudio();
 
     if(state.mode !== "quiz" || state.locked) return;
 
@@ -1116,7 +1147,6 @@
   function restartQuiz(){
     stopTimer();
 
-    // ensure results hidden, quiz shown
     els.resultsView.classList.remove("show");
     els.quizView.classList.add("show");
 
@@ -1185,22 +1215,17 @@
   /* --------- init (auto start) --------- */
   syncSettingsToUI();
 
-  // build first quiz immediately
   state.questions = generateQuestions(settings.n, settings.minB);
   state.status = Array(state.questions.length).fill(null);
   state.hadWrong = Array(state.questions.length).fill(false);
 
-  // ensure correct screen
   els.resultsView.classList.remove("show");
   els.quizView.classList.add("show");
 
   loadQuestion(0);
 })();
 </script>
+
   <script src="https://limkimsze-maker.github.io/assets/nav.js"></script>
 </body>
 </html>
-
-
-
-
