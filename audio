@@ -623,7 +623,6 @@
     timerFill: $("timerFill"),
 
     soundBtn: $("soundBtn"),
-    unlockBtn: $("unlockBtn"),
     timingBtn: $("timingBtn"),
     restartAll: $("restartAll"),
 
@@ -686,8 +685,9 @@
   })();
 
   /* --------- audio --------- */
-  let soundOn = true;
-  let audioUnlocked = false;
+   /* --------- audio --------- */
+  let soundOn = true;          // ✅ default ON
+  let audioUnlocked = false;   // browser requires first user gesture
 
   const sndWrong = new Audio("./wrong.mp3");
   const sndCorrect = new Audio("./correct.mp3");
@@ -697,11 +697,15 @@
   });
 
   function updateSoundUI(){
-      function unlockAudio(){
+    if(!els.soundBtn) return;
+    els.soundBtn.textContent = soundOn ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+  }
+
+  function unlockAudio(){
     if(audioUnlocked) return;
     audioUnlocked = true;
 
-    // Prime audio silently (browser gesture unlock)
+    // Prime audio silently on first gesture
     try{
       [sndWrong, sndCorrect, sndClock].forEach(a=>{
         try{
@@ -719,24 +723,29 @@
         }catch{}
       });
     }catch{}
-
-    updateSoundUI();
   }
 
-  // ✅ Auto-unlock on first interaction anywhere (no need to press the unlock button)
+  function safePlay(a){
+    if(!soundOn) return;
+    // If still locked, just skip quietly (it'll work after first tap/keypress)
+    if(!audioUnlocked) return;
+    try{ a.currentTime = 0; a.play().catch(()=>{}); }catch{}
+  }
+
+  // ✅ Auto-unlock on FIRST interaction anywhere (no extra button needed)
   window.addEventListener("pointerdown", unlockAudio, { once:true, capture:true });
   window.addEventListener("keydown", unlockAudio, { once:true, capture:true });
   window.addEventListener("touchstart", unlockAudio, { once:true, capture:true, passive:true });
 
+  // Toggle sound OFF/ON
   els.soundBtn.addEventListener("click", ()=>{
-    // clicking Sound toggle is a user gesture too → unlock immediately when turning ON
+    // clicking is a gesture → unlock when turning ON
     soundOn = !soundOn;
     if(soundOn) unlockAudio();
     updateSoundUI();
   });
 
-  // Keep button as fallback, but now it just calls the same unlock
-  els.unlockBtn.addEventListener("click", unlockAudio);
+  updateSoundUI();
 
   /* --------- settings (defaults) --------- */
   const settings = {
@@ -1033,6 +1042,8 @@
   }
 
   function checkAnswer(){
+  unlockAudio();
+
     if(state.mode !== "quiz" || state.locked) return;
 
     const q = state.questions[state.idx];
@@ -1188,5 +1199,6 @@
 </script>
 </body>
 </html>
+
 
 
